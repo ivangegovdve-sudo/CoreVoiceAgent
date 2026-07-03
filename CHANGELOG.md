@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.2.0
+
+Concurrency hardening and a safer session API.
+
+- **Breaking**: `VoiceAgentSession.start()` now throws
+  `VoiceAgentSessionError.alreadyStarted` when called more than once,
+  instead of crashing with a precondition failure. Wrap the call in
+  `do`/`catch` (or keep `try await` and let the error propagate) if your
+  app could start a session twice.
+- `SpeakerAudioOutput` playbacks now carry a generation (epoch) token: the
+  fire-and-forget stop issued when a playback is cancelled can no longer
+  land late and halt the next turn's first chunk.
+- `SpeakerAudioOutput.play(_:)` applies a defensive timeout (buffer
+  duration plus a margin), so an engine that never fires its completion
+  handler can no longer hang the playback pipeline.
+- `MicrophoneAudioInput` frame delivery is now bounded
+  (`maxBufferedFrames`, five seconds of audio): the newest frames are
+  kept and the oldest dropped, so a stalled consumer no longer
+  accumulates unbounded audio.
+- New `CoreVoiceAgentAudioTests` target covering the playback generation
+  counter and timeout logic, and a CI workflow running `swift build` and
+  `swift test` on every pull request and push to `main`.
+
 ## 0.1.0
 
 Initial release.

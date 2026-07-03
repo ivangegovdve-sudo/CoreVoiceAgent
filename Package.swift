@@ -71,5 +71,9 @@ let package = Package(
       name: "CoreVoiceAgentCoreTests",
       dependencies: ["CoreVoiceAgentCore", "CoreVoiceAgentTestSupport"]
     ),
+    .testTarget(
+      name: "CoreVoiceAgentAudioTests",
+      dependencies: ["CoreVoiceAgentAudio"]
+    ),
   ]
 )
