@@ -13,6 +13,7 @@ public actor SpeakerAudioOutput: AudioOutput {
   private var engine: AVAudioEngine?
   private var player: AVAudioPlayerNode?
   private var connectedSampleRate: Double?
+  private var generations = PlaybackGenerationCounter()
 
   /// Creates a speaker output.
   public init() {}
@@ -22,33 +23,66 @@ public actor SpeakerAudioOutput: AudioOutput {
     let player = try preparePlayer(sampleRate: Double(speech.sampleRate))
     let buffer = try makeBuffer(for: speech)
 
+    // Each playback takes a fresh generation token so that the
+    // fire-and-forget stop issued on cancellation cannot land late and
+    // halt a newer playback that started after this one ended.
+    let generation = generations.beginPlayback()
+    let timeout = playbackTimeout(
+      sampleCount: speech.samples.count,
+      sampleRate: speech.sampleRate
+    )
+    let (playedBack, playedBackContinuation) = AsyncStream.makeStream(of: Void.self)
+
     try await withTaskCancellationHandler {
       try Task.checkCancellation()
-      await withCheckedContinuation { continuation in
-        player.scheduleBuffer(
-          buffer,
-          at: nil,
-          options: [],
-          completionCallbackType: .dataPlayedBack
-        ) { _ in
-          continuation.resume()
-        }
-        player.play()
+      player.scheduleBuffer(
+        buffer,
+        at: nil,
+        options: [],
+        completionCallbackType: .dataPlayedBack
+      ) { _ in
+        playedBackContinuation.yield(())
+        playedBackContinuation.finish()
+      }
+      player.play()
+
+      // A defensive timeout (buffer duration plus margin) keeps a dead
+      // engine from hanging the pipeline when the completion handler
+      // never fires.
+      let outcome = await awaitPlaybackSignal(playedBack, timeout: timeout)
+      if outcome == .timedOut, generations.isCurrent(generation) {
+        // The engine failed to report completion; reset the player so
+        // the next chunk starts from a clean state.
+        generations.invalidate()
+        player.stop()
       }
       try Task.checkCancellation()
     } onCancel: {
-      Task { await self.stop() }
+      // Carry this playback's generation so a stop that lands late is a
+      // no-op once a newer playback (or an explicit stop) has taken over.
+      Task { await self.stop(ifCurrent: generation) }
     }
   }
 
   public func stop() async {
     // Stopping the player flushes scheduled buffers and fires their
     // completion handlers, which resumes any in-flight play(_:).
+    // Invalidate outstanding generations so late cancellation stops
+    // become no-ops.
+    generations.invalidate()
+    player?.stop()
+  }
+
+  /// Stops playback only if `generation` is still the current playback.
+  private func stop(ifCurrent generation: UInt64) {
+    guard generations.isCurrent(generation) else { return }
+    generations.invalidate()
     player?.stop()
   }
 
   /// Tears down the audio engine. The next `play(_:)` rebuilds it.
   public func shutDown() {
+    generations.invalidate()
     player?.stop()
     engine?.stop()
     player = nil

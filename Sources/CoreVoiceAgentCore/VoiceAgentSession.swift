@@ -1,5 +1,22 @@
 import Foundation
 
+/// Errors thrown by `VoiceAgentSession`.
+public enum VoiceAgentSessionError: Error, Equatable, Sendable {
+  /// `start()` was called on a session that has already been started.
+  ///
+  /// A session runs once; create a new session after `stop()`.
+  case alreadyStarted
+}
+
+extension VoiceAgentSessionError: CustomStringConvertible {
+  public var description: String {
+    switch self {
+    case .alreadyStarted:
+      return "VoiceAgentSession.start() may only be called once; create a new session instead."
+    }
+  }
+}
+
 /// A session that runs the full voice loop for one conversation.
 ///
 /// The session owns turn-taking. It segments user speech from the capture
@@ -76,8 +93,10 @@ public actor VoiceAgentSession {
   /// A session runs once; create a new session after `stop()`.
   ///
   /// - Returns: A stream of session events, in order.
+  /// - Throws: `VoiceAgentSessionError.alreadyStarted` if the session has
+  ///   already been started.
   public func start() async throws -> AsyncStream<VoiceAgentEvent> {
-    precondition(!hasStarted, "VoiceAgentSession.start() may only be called once.")
+    guard !hasStarted else { throw VoiceAgentSessionError.alreadyStarted }
     hasStarted = true
 
     let (stream, continuation) = AsyncStream.makeStream(

@@ -36,7 +36,7 @@ the current one plays. Sustained user speech during a reply cancels it
 dependencies: [
   .package(
     url: "https://github.com/rudrankriyam/CoreVoiceAgent.git",
-    from: "0.1.0"
+    from: "0.2.0"
   )
 ]
 ```
@@ -101,6 +101,10 @@ for await event in try await session.start() {
 On iOS, configure an `AVAudioSession` with the `.playAndRecord` category
 and `.voiceChat` mode, and request microphone permission, before starting
 the session.
+
+A session runs once: calling `start()` a second time throws
+`VoiceAgentSessionError.alreadyStarted`. Create a new session after
+`stop()`.
 
 ## Swap the brain
 

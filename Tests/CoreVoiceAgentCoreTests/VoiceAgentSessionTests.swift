@@ -104,6 +104,18 @@ struct VoiceAgentSessionTests {
     events.firstIndex(where: predicate)
   }
 
+  @Test("Starting a session twice throws alreadyStarted")
+  func startingTwiceThrowsAlreadyStarted() async throws {
+    let fixture = makeFixture()
+    _ = try await fixture.session.start()
+
+    await #expect(throws: VoiceAgentSessionError.alreadyStarted) {
+      _ = try await fixture.session.start()
+    }
+
+    await fixture.session.stop()
+  }
+
   @Test("A complete turn emits the expected event sequence")
   func completeTurnEventOrder() async throws {
     let fixture = makeFixture()

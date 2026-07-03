@@ -22,6 +22,17 @@ public actor MicrophoneAudioInput: AudioInput {
   /// The duration of each delivered frame.
   public static let frameDuration: TimeInterval = 0.02
 
+  /// The maximum number of frames buffered while the consumer is busy —
+  /// five seconds of audio at ``frameDuration``.
+  ///
+  /// Drop policy: the frame stream keeps the newest frames and discards
+  /// the oldest ones beyond this limit, so a stalled consumer (for
+  /// example, a turn pipeline that is stuck) sees a bounded, recent
+  /// window of audio instead of accumulating memory without bound. The
+  /// endpointer cares about recent audio, so dropping the oldest frames
+  /// degrades gracefully.
+  public static let maxBufferedFrames = 250
+
   private var engine: AVAudioEngine?
   private var continuation: AsyncStream<AudioFrame>.Continuation?
 
@@ -37,9 +48,10 @@ public actor MicrophoneAudioInput: AudioInput {
     // automatic gain control. Enable it before wiring the graph.
     try inputNode.setVoiceProcessingEnabled(true)
 
+    // Bounded on purpose: see `maxBufferedFrames` for the drop policy.
     let (stream, continuation) = AsyncStream.makeStream(
       of: AudioFrame.self,
-      bufferingPolicy: .unbounded
+      bufferingPolicy: .bufferingNewest(Self.maxBufferedFrames)
     )
 
     let captureFormat = inputNode.outputFormat(forBus: 0)
