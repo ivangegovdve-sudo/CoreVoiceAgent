@@ -52,8 +52,8 @@ public protocol Transcriber: Sendable {
 /// The conversational brain of a voice agent: user text in, streamed
 /// assistant text out.
 ///
-/// `CoreAgentResponder` (in the `CoreVoiceAgent` product) adapts
-/// `CoreAgentSession` — and therefore any Foundation Models
+/// `FoundationModelsAgentResponder` (in the `CoreVoiceAgent` product)
+/// adapts `AgentSession` — and therefore any Foundation Models
 /// `LanguageModel`, including the on-device system model — to this
 /// protocol. Swap in a different conforming type to change the brain
 /// without touching the voice loop.

@@ -31,7 +31,7 @@ extension VoiceAgentSessionError: CustomStringConvertible {
 ///   input: MicrophoneAudioInput(),
 ///   output: SpeakerAudioOutput(),
 ///   transcriber: AppTranscriber(),
-///   responder: CoreAgentResponder(session: agent),
+///   responder: FoundationModelsAgentResponder(session: agent),
 ///   synthesizer: ChatterboxSpeechSynthesizer(engine: chatterbox)
 /// )
 ///
@@ -40,9 +40,8 @@ extension VoiceAgentSessionError: CustomStringConvertible {
 /// }
 /// ```
 ///
-/// Every dependency is a protocol, so the ears, brain (CoreAgent over any
-/// Foundation Models `LanguageModel`), and mouth (Chatterbox) are swappable
-/// without touching the loop.
+/// Every dependency is a protocol, so the ears, optional Foundation Models
+/// Agent brain, and Core AI mouth are swappable without touching the loop.
 public actor VoiceAgentSession {
   private let configuration: VoiceAgentConfiguration
   private let input: any AudioInput

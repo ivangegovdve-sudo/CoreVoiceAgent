@@ -15,9 +15,9 @@ struct VoiceAgentSessionTests {
   }
 
   private func makeFixture(
-    transcripts: [String] = ["What is CoreAgent?"],
+    transcripts: [String] = ["What is Foundation Models Agent?"],
     replies: [String] = [
-      "CoreAgent is a production harness. It governs tools and checkpoints transcripts."
+      "Foundation Models Agent is a production harness. It governs tools and checkpoints transcripts."
     ],
     playbackDelay: Duration = .zero,
     responderError: (any Error)? = nil,
@@ -134,12 +134,18 @@ struct VoiceAgentSessionTests {
       { $0 == .listening },
       { $0 == .userSpeechStarted },
       { $0 == .transcribing },
-      { $0 == .userTranscript("What is CoreAgent?") },
+      { $0 == .userTranscript("What is Foundation Models Agent?") },
       { $0 == .thinking },
-      { if case .synthesizing = $0 { return true }; return false },
+      {
+        if case .synthesizing = $0 { return true }
+        return false
+      },
       { $0 == .speakingStarted },
       { $0 == .speakingFinished },
-      { if case .turnCompleted = $0 { return true }; return false },
+      {
+        if case .turnCompleted = $0 { return true }
+        return false
+      },
     ]
     var searchStart = 0
     for (position, matches) in expectedOrder.enumerated() {
@@ -152,7 +158,7 @@ struct VoiceAgentSessionTests {
     #expect(
       events.contains(
         .assistantText(
-          "CoreAgent is a production harness. It governs tools and checkpoints transcripts."
+          "Foundation Models Agent is a production harness. It governs tools and checkpoints transcripts."
         )
       )
     )
@@ -161,7 +167,7 @@ struct VoiceAgentSessionTests {
       Issue.record("Expected turnCompleted, got \(String(describing: events.last))")
       return
     }
-    #expect(turn.userText == "What is CoreAgent?")
+    #expect(turn.userText == "What is Foundation Models Agent?")
     #expect(turn.assistantText.hasSuffix("transcripts."))
     await fixture.session.stop()
   }
@@ -178,10 +184,11 @@ struct VoiceAgentSessionTests {
     }
 
     let playbacks = await fixture.output.playbacks
-    #expect(playbacks.map(\.text) == [
-      "CoreAgent is a production harness.",
-      "It governs tools and checkpoints transcripts.",
-    ])
+    #expect(
+      playbacks.map(\.text) == [
+        "Foundation Models Agent is a production harness.",
+        "It governs tools and checkpoints transcripts.",
+      ])
     await fixture.session.stop()
   }
 

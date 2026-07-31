@@ -1,20 +1,21 @@
 # CoreVoiceAgent
 
-**CoreAgent makes any model shippable. CoreVoiceAgent gives it a voice.**
+**A Core AI voice pipeline with a swappable agent brain.**
 
-CoreVoiceAgent is a voice agent pipeline for Apple platforms:
+CoreVoiceAgent is a Core AI-centered voice agent pipeline for Apple platforms:
 
 ```text
 microphone ──▶ endpointer ──▶ transcriber ──▶ responder ──▶ chunker ──▶ synthesizer ──▶ speaker
-   (your speech recognizer)          (CoreAgent over Foundation Models)      (Chatterbox Turbo via Core AI)
+   (your speech recognizer)      (swappable; Foundation Models Agent included)   (Chatterbox via Core AI)
 ```
 
-Every stage is a protocol. This package ships the voice loop, a
-[CoreAgent](https://github.com/rudrankriyam/CoreAgent) responder over any
-Foundation Models `LanguageModel`, Chatterbox Turbo text-to-speech through
-Core AI, AVAudioEngine capture/playback, and deterministic test doubles.
-Bring the speech recognizer that fits your app by conforming to
-`Transcriber`.
+Every stage is a protocol. The package's defining runtime is its Core AI
+Chatterbox Turbo speech synthesis and interruption-aware voice loop. It also
+ships an optional
+[Foundation Models Agent](https://github.com/rudrankriyam/FoundationModelsAgent)
+responder over any Foundation Models `LanguageModel`, AVAudioEngine
+capture/playback, and deterministic test doubles. Bring the speech recognizer
+that fits your app by conforming to `Transcriber`.
 
 `VoiceAgentSession` owns the loop: it segments user speech with a
 deterministic energy endpointer, transcribes the finished utterance,
@@ -25,10 +26,10 @@ the current one plays. Sustained user speech during a reply cancels it
 
 ## Requirements
 
-- Swift 6.2+ toolchain (Xcode 27 for the CoreAgent and Core AI paths)
-- iOS 27+ or macOS 27+ for the CoreAgent, Core AI, and AVFoundation paths
+- Swift 6.4 toolchain with Xcode 27 for the canonical Apple package
+- iOS 27+ or macOS 27+ for Foundation Models Agent, Core AI, and AVFoundation
 - The platform-independent core (`CoreVoiceAgentCore`) compiles and tests
-  anywhere Swift runs, including Linux
+  independently through the Swift 6.2+ shadow package, including on Linux
 
 ## Installation
 
@@ -45,7 +46,7 @@ Pick products by the weight you want to carry:
 
 | Product | What it adds |
 | --- | --- |
-| `CoreVoiceAgent` | The pipeline plus the CoreAgent-backed responder |
+| `CoreVoiceAgent` | The pipeline plus the Foundation Models Agent responder |
 | `CoreVoiceAgentCore` | Just the pipeline and protocols (no Apple-only imports) |
 | `CoreVoiceAgentChatterbox` | Chatterbox Turbo mouth via Core AI |
 | `CoreVoiceAgentAudio` | `AVAudioEngine` capture and playback |
@@ -54,16 +55,16 @@ Pick products by the weight you want to carry:
 ## Quick start
 
 ```swift
-import CoreAgent
 import CoreVoiceAgent
 import CoreVoiceAgentAudio
 import CoreVoiceAgentChatterbox
 import FoundationModels
+import FoundationModelsAgent
 
-// The brain: any LanguageModel, wrapped in CoreAgent's production
-// harness. Voice turns accumulate in the native transcript, and tool
+// The optional brain: any LanguageModel, wrapped in Foundation Models
+// Agent. Voice turns accumulate in the native transcript, and tool
 // governance, checkpoints, and memory apply as they do for text.
-let agent = try CoreAgentSession(
+let agent = try AgentSession(
   model: SystemLanguageModel.default,
   instructions: Instructions {
     "You are a voice assistant. Keep replies short and speakable."
@@ -80,7 +81,7 @@ let session = VoiceAgentSession(
   input: MicrophoneAudioInput(),
   output: SpeakerAudioOutput(),
   transcriber: AppTranscriber(),
-  responder: CoreAgentResponder(session: agent),
+  responder: FoundationModelsAgentResponder(session: agent),
   synthesizer: ChatterboxSpeechSynthesizer(engine: chatterbox)
 )
 
@@ -108,24 +109,29 @@ A session runs once: calling `start()` a second time throws
 
 ## Swap the brain
 
-`CoreAgentResponder` carries whichever `LanguageModel` its
-`CoreAgentSession` was built with. Everything CoreAgent supports drops in
-unchanged — the on-device system model, Claude or Gemini through
-`CoreAgentProviders`, a local server through Apple's generic Chat
+`FoundationModelsAgentResponder` carries whichever `LanguageModel` its
+`AgentSession` was built with. Everything Foundation Models Agent supports
+drops in unchanged — the on-device system model, Claude or Gemini through
+`FoundationModelsAgentProviders`, a local server through Apple's generic Chat
 Completions client, or `RecordedLanguageModel` from
-`CoreAgentTestSupport` for deterministic tests:
+`FoundationModelsAgentTestSupport` for deterministic tests:
 
 ```swift
-let claude = CoreAgentProviderModels.claude(
+import FoundationModelsAgentProviders
+
+let claude = FoundationModelsAgentProviderModels.claude(
   auth: .proxied(headers: ["Authorization": appSessionToken]),
   baseURL: relayURL
 )
-let responder = CoreAgentResponder(session: try CoreAgentSession(model: claude))
+let responder = FoundationModelsAgentResponder(
+  session: try AgentSession(model: claude)
+)
 ```
 
 Governed tools work mid-conversation: a voice turn that triggers a
-CoreAgent tool goes through the same approval, allowlist, budget, and
-timeout policy as a text turn, and the confirmation is spoken back.
+Foundation Models Agent tool goes through the same approval, allowlist,
+budget, and timeout policy as a text turn, and the confirmation is spoken
+back.
 
 Any other brain conforms in one method:
 
@@ -206,8 +212,9 @@ swift test                       # on a Mac, all targets
 Scripts/test-core-linux.sh       # on Linux, the core + test support
 ```
 
-Pair `CoreAgentResponder` with CoreAgent's `RecordedLanguageModel` for
-end-to-end voice tests with a deterministic, zero-network brain.
+Pair `FoundationModelsAgentResponder` with Foundation Models Agent's
+`RecordedLanguageModel` for end-to-end voice tests with a deterministic,
+zero-network brain.
 
 ## Deliberate boundaries
 
@@ -219,7 +226,8 @@ end-to-end voice tests with a deterministic, zero-network brain.
 - **Sentence-granular barge-in.** Cancellation stops synthesis within one
   T3 decode token and playback at the next buffer, but the already-spoken
   words stand — the transcriptual record keeps what the user actually
-  heard... and CoreAgent's transcript keeps the full intended reply.
+  heard... and Foundation Models Agent's transcript keeps the full intended
+  reply.
 - **The session does not manage audio-session policy.** Categories,
   routing, and interruptions differ per app; `MicrophoneAudioInput`
   documents what it needs.

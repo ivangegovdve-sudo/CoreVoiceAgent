@@ -1,4 +1,4 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.4
 
 import PackageDescription
 
@@ -9,9 +9,9 @@ let package = Package(
     .macOS("27.0"),
   ],
   products: [
-    // The umbrella product: the voice pipeline plus the CoreAgent-backed
-    // conversation brain (on-device Foundation Models by default, any
-    // `LanguageModel` by construction).
+    // The umbrella product: the Core AI voice pipeline plus the optional
+    // Foundation Models Agent-backed conversation brain (on-device
+    // Foundation Models by default, any `LanguageModel` by construction).
     .library(name: "CoreVoiceAgent", targets: ["CoreVoiceAgent"]),
     // The platform-independent voice pipeline: protocols, endpointing,
     // sentence chunking, and the session orchestrator. No Apple-only
@@ -29,8 +29,8 @@ let package = Package(
   ],
   dependencies: [
     .package(
-      url: "https://github.com/rudrankriyam/CoreAgent.git",
-      from: "0.3.0"
+      url: "https://github.com/rudrankriyam/FoundationModelsAgent.git",
+      exact: "0.5.0"
     ),
     .package(
       url: "https://github.com/huggingface/swift-transformers.git",
@@ -43,7 +43,7 @@ let package = Package(
       name: "CoreVoiceAgent",
       dependencies: [
         "CoreVoiceAgentCore",
-        .product(name: "CoreAgent", package: "CoreAgent"),
+        .product(name: "FoundationModelsAgent", package: "FoundationModelsAgent"),
       ]
     ),
     .target(
@@ -74,6 +74,16 @@ let package = Package(
     .testTarget(
       name: "CoreVoiceAgentAudioTests",
       dependencies: ["CoreVoiceAgentAudio"]
+    ),
+    .testTarget(
+      name: "CoreVoiceAgentTests",
+      dependencies: [
+        "CoreVoiceAgent",
+        .product(
+          name: "FoundationModelsAgentTestSupport",
+          package: "FoundationModelsAgent"
+        ),
+      ]
     ),
   ]
 )

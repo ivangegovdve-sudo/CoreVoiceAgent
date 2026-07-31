@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- Kept the `CoreVoiceAgent` package and product names: they describe the
+  Core AI-centered voice pipeline, not its optional conversation model.
+- **Breaking**: migrated the optional agent integration from CoreAgent 0.3 to
+  Foundation Models Agent 0.5 and renamed `CoreAgentResponder` to
+  `FoundationModelsAgentResponder`. The responder now wraps `AgentSession`;
+  no compatibility alias is provided.
+- Raised the canonical package tools version to Swift 6.4 and pinned
+  Foundation Models Agent exactly at 0.5.0 so a future breaking 0.x release
+  cannot be selected silently. The platform-independent shadow package remains
+  on Swift 6.2.
+- Fixed an Xcode 27 ownership-checking build failure in the Core AI Chatterbox
+  cache helpers by keeping non-reassigned NDArray view bindings immutable.
+
 ## 0.2.0
 
 Concurrency hardening and a safer session API.
