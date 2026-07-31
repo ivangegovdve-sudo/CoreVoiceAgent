@@ -3,8 +3,9 @@
 # without the Apple SDKs) by building a shadow package that contains only
 # the CoreVoiceAgentCore, CoreVoiceAgentTestSupport, and
 # CoreVoiceAgentCoreTests targets. The canonical Package.swift depends on
-# CoreAgent and Core AI runtimes that require Xcode 27, so it cannot be
-# resolved off-platform; the shadow package symlinks the same sources.
+# Foundation Models Agent and Core AI runtimes that require Xcode 27, so
+# it cannot be resolved off-platform; the shadow package symlinks the same
+# sources.
 set -euo pipefail
 
 PACKAGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

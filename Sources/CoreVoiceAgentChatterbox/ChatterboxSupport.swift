@@ -11,7 +11,7 @@ import Foundation
 enum ChatterboxNDArray {
   static func zerosFloat16(shape: [Int]) -> NDArray {
     var array = NDArray(shape: shape, scalarType: .float16)
-    var view = array.mutableView(as: Float16.self)
+    let view = array.mutableView(as: Float16.self)
     view.withUnsafeMutablePointer { pointer, shape, _ in
       let count = product(shape)
       for index in 0..<count {
@@ -84,11 +84,10 @@ enum ChatterboxNDArray {
       )
     }
 
-    var destinationView = cache.mutableView(as: Float16.self)
-    updates.view(as: Float16.self).withUnsafePointer {
-      source, sourceShape, sourceStrides in
-      destinationView.withUnsafeMutablePointer {
-        destination, _, destinationStrides in
+    cache.mutableView(as: Float16.self).withUnsafeMutablePointer {
+      destination, _, destinationStrides in
+      updates.view(as: Float16.self).withUnsafePointer {
+        source, sourceShape, sourceStrides in
         for layer in 0..<sourceShape[0] {
           for batch in 0..<sourceShape[1] {
             for head in 0..<sourceShape[2] {

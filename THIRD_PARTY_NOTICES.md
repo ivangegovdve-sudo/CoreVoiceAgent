@@ -13,7 +13,8 @@ CoreVoiceAgent composes the following third-party work.
 
 ## Package dependencies
 
-- **[CoreAgent](https://github.com/rudrankriyam/CoreAgent)** — MIT.
+- **[Foundation Models Agent](https://github.com/rudrankriyam/FoundationModelsAgent)**
+  — MIT.
 - **[swift-transformers](https://github.com/huggingface/swift-transformers)**
   — Apache License 2.0.
 
